@@ -1,0 +1,5 @@
+/.idea/
+/.venv/
+/input/
+.env
+docker-compose.yaml

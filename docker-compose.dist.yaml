@@ -1,0 +1,15 @@
+x-shared-logs: &shared-logs
+  logging:
+    driver: "json-file"
+    options:
+      max-size: "10k"
+
+services:
+  app:
+    build:
+      context: .
+    volumes:
+      - ./db:/app/db
+    ports:
+      - "8000:8000"
+    <<: *shared-logs

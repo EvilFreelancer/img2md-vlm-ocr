@@ -1,0 +1,21 @@
+# Project Coding Rules
+
+## File Endings
+
+- Every new file **must** have a single empty line at the end (POSIX compatibility).
+
+## Comments
+
+- All comments in code **must** be in English, unless the user explicitly requests otherwise.
+
+## Project Structure
+
+- Follow this structure:
+    - app/
+        - controllers/ # Controllers: business logic, request handling
+        - services/ # Services: external API/model logic
+        - schemas/ # Pydantic schemas for request/response
+        - settings.py # Project and model settings (Pydantic)
+        - main.py # FastAPI entry point
+    - requirements.txt # Dependencies
+    - README.md # Project documentation
