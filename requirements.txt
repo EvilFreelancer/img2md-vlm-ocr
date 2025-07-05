@@ -1,4 +1,8 @@
-fastapi==0.115.14
-uvicorn==0.35.0
-requests==2.32.4
-pydantic==2.11.7
+# API server
+fastapi~=0.115.14
+uvicorn~=0.35.0
+python-multipart~=0.0.20
+
+# Inference
+requests~=2.32.4
+pydantic~=2.11.7

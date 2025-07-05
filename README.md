@@ -1,6 +1,6 @@
 # Markdown OCR VLM API
 
-## Launch
+## Launch (local)
 
 ```bash
 uvicorn app.main:app --reload
@@ -22,6 +22,24 @@ Copy `.env.dist` to `.env` and fill in your values:
 
 ```bash
 cp .env.dist .env
+```
+
+## Docker
+
+Build and run the app in Docker:
+
+```bash
+docker build -t markdown-ocr .
+docker run --env-file .env -p 8000:8000 markdown-ocr
+```
+
+## Docker Compose
+
+You can use the provided `docker-compose.dist.yaml` as a template:
+
+```bash
+cp docker-compose.dist.yaml docker-compose.yaml
+docker compose up --build
 ```
 
 ## Endpoint
@@ -62,3 +80,6 @@ POST `/predict/objects`
 - requirements.txt # Dependencies
 - README.md # Project documentation
 - .env.dist # Example environment config
+- Dockerfile # Docker build file
+- entrypoint.sh # Entrypoint script for Docker
+- docker-compose.dist.yaml # Example docker-compose config
