@@ -1,5 +1,6 @@
 /.idea/
 /.venv/
 /input/
+__pycache__
 .env
 docker-compose.yaml

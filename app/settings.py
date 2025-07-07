@@ -3,13 +3,14 @@ from pydantic import BaseSettings, Field
 class Settings(BaseSettings):
 
     # Server settings
-    host: str = Field("0.0.0.0", description="Server host")
-    port: int = Field(8000, description="Server port")
+    host: str = Field(description="Server host (default: %(default)s)", default="0.0.0.0")
+    port: int = Field(description="Server port (default: %(default)s)", default=8000)
 
     # OpenAI API settings
-    openai_api_key: str = Field(..., env="OPENAI_API_KEY", description="OpenAI API key")
-    openai_endpoint: str = Field("https://api.openai.com/v1/chat/completions", description="OpenAI API endpoint")
-    openai_model: str = Field("gpt-4o", description="Default OpenAI model")
+    openai_api_key: str = Field(description="OpenAI API key")
+    openai_endpoint: str = Field(description="OpenAI API endpoint", default="https://api.openai.com/v1/chat/completions")
+    openai_model: str = Field(description="Default OpenAI model", default="gpt-4o")
+    openai_proxy: str = Field(description="Proxy URL for OpenAI API (optional)")
 
     class Config:
         env_file = ".env"

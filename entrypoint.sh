@@ -10,4 +10,4 @@ uvicorn \
   --host ${APP_BIND} \
   --port ${APP_PORT} \
   --workers ${APP_WORKERS} \
-  main:app
+  app.main:app

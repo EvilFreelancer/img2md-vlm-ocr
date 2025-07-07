@@ -8,6 +8,7 @@ class OpenAIService:
         self.api_key = self.settings.openai_api_key
         self.endpoint = self.settings.openai_endpoint
         self.model = self.settings.openai_model
+        self.proxy = getattr(self.settings, 'openai_proxy', None)
 
     def predict(self, image_bytes: bytes, prompt: str, model: str = None, **kwargs):
         headers = {
@@ -24,6 +25,7 @@ class OpenAIService:
             ],
             **kwargs
         }
-        response = requests.post(self.endpoint, json=data, headers=headers)
+        proxies = {"http": self.proxy, "https": self.proxy} if self.proxy else None
+        response = requests.post(self.endpoint, json=data, headers=headers, proxies=proxies)
         response.raise_for_status()
         return response.json()

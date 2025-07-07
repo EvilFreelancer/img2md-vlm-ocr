@@ -12,11 +12,11 @@ All configuration is managed via a `.env` file in the project root. See `.env.di
 
 Required variables:
 
+- `HOST` — (optional) server host (default: 0.0.0.0)
+- `PORT` — (optional) server port (default: 8000)
 - `OPENAI_API_KEY` — your OpenAI API key
 - `OPENAI_API_ENDPOINT` — (optional) OpenAI API endpoint (default: https://api.openai.com/v1/chat/completions)
 - `OPENAI_API_MODEL` — (optional) OpenAI model name (default: gpt-4o)
-- `HOST` — (optional) server host (default: 0.0.0.0)
-- `PORT` — (optional) server port (default: 8000)
 
 Copy `.env.dist` to `.env` and fill in your values:
 
