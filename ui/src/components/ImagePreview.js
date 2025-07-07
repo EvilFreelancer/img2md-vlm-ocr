@@ -5,7 +5,7 @@ function ImagePreview({ image, objects }) {
   const canvasRef = useRef(null);
 
   useEffect(() => {
-    if (!image || !objects) return;
+    if (!image || !Array.isArray(objects)) return;
     const img = new window.Image();
     img.src = image;
     img.onload = () => {
@@ -29,6 +29,8 @@ function ImagePreview({ image, objects }) {
       });
     };
   }, [image, objects]);
+
+  if (!image || !Array.isArray(objects)) return null;
 
   return (
     <div className="relative w-full flex justify-center items-center bg-white p-2 rounded shadow">

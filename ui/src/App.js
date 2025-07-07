@@ -1,57 +1,106 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import ImageUploader from "./components/ImageUploader";
+import ImageTile from "./components/ImageTile";
 import Loader from "./components/Loader";
-import Controls from "./components/Controls";
 import JsonViewer from "./components/JsonViewer";
-import ImagePreview from "./components/ImagePreview";
+import ImageModal from "./components/ImageModal";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000/api/objects";
 
 function App() {
-  const [images, setImages] = useState([]); // [{file, url, result}]
-  const [loading, setLoading] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [images, setImages] = useState([]); // [{file, url, result, status: 'pending'|'loading'|'done'|'error'}]
+  const [selectedIndex, setSelectedIndex] = useState(null);
   const [showJson, setShowJson] = useState(false);
+  const [jsonData, setJsonData] = useState(null);
+  const [modalIndex, setModalIndex] = useState(null);
+  const queueRef = useRef([]);
+  const isProcessingRef = useRef(false);
 
-  // Handle image upload
+  // Add new images to queue and state
   const handleUpload = (files) => {
-    const imgs = files.map((file) => ({ file, url: URL.createObjectURL(file), result: null }));
-    setImages(imgs);
-    setSelectedIndex(0);
+    setImages((prev) => {
+      const newImgs = files.map((file, i) => ({
+        file,
+        url: URL.createObjectURL(file),
+        result: null,
+        status: "pending",
+      }));
+      // Push new indices to queue
+      queueRef.current.push(...newImgs.map((_, i) => prev.length + i));
+      return [...prev, ...newImgs];
+    });
   };
 
-  // Send image(s) to API
-  const handleSend = async () => {
-    setLoading(true);
-    const newImages = await Promise.all(
-      images.map(async (img) => {
-        const formData = new FormData();
-        formData.append("file", img.file);
+  // FIFO queue processor
+  useEffect(() => {
+    async function processQueue() {
+      if (isProcessingRef.current) return;
+      isProcessingRef.current = true;
+      while (queueRef.current.length > 0) {
+        const idx = queueRef.current.shift();
+        setImages((prev) => {
+          const arr = [...prev];
+          if (arr[idx]) arr[idx].status = "loading";
+          return arr;
+        });
         try {
+          const formData = new FormData();
+          formData.append("file", images[idx].file);
           const res = await fetch(API_URL, {
             method: "POST",
             body: formData,
           });
           const data = await res.json();
-          return { ...img, result: data };
+          const mappedObjects = Array.isArray(data.objects)
+            ? data.objects.map(obj => ({
+                ...obj,
+                bbox: obj.bbox_2d,
+              }))
+            : [];
+          setImages((prev) => {
+            const arr = [...prev];
+            if (arr[idx]) {
+              arr[idx].result = { ...data, objects: mappedObjects };
+              arr[idx].status = "done";
+            }
+            return arr;
+          });
         } catch (e) {
-          return { ...img, result: { error: e.message } };
+          setImages((prev) => {
+            const arr = [...prev];
+            if (arr[idx]) {
+              arr[idx].result = { error: e.message };
+              arr[idx].status = "error";
+            }
+            return arr;
+          });
         }
-      })
-    );
-    setImages(newImages);
-    setLoading(false);
-  };
+      }
+      isProcessingRef.current = false;
+    }
+    if (queueRef.current.length > 0) {
+      processQueue();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [images.length]);
 
   // Repeat (re-send)
-  const handleRepeat = () => {
-    handleSend();
+  const handleRepeat = (idx) => {
+    setImages((prev) => {
+      const arr = [...prev];
+      if (arr[idx]) {
+        arr[idx].status = "pending";
+        arr[idx].result = null;
+      }
+      return arr;
+    });
+    queueRef.current.push(idx);
   };
 
   // Download image with boxes
-  const handleDownload = () => {
-    const img = images[selectedIndex];
-    if (!img || !img.result || !img.result.objects) return;
+  const handleDownload = (idx) => {
+    const img = images[idx];
+    if (!img || !img.result || !Array.isArray(img.result.objects)) return;
     const canvas = document.createElement("canvas");
     const imageEl = new window.Image();
     imageEl.src = img.url;
@@ -72,28 +121,29 @@ function App() {
         }
       });
       const link = document.createElement("a");
-      link.download = `result_${selectedIndex + 1}.png`;
+      link.download = `result_${idx + 1}.png`;
       link.href = canvas.toDataURL();
       link.click();
     };
   };
 
-  // Show JSON
-  const handleShowJson = () => {
+  // Show JSON modal
+  const handleShowJson = (idx) => {
+    setJsonData(images[idx]?.result);
     setShowJson(true);
   };
-
-  // Hide JSON
   const handleCloseJson = () => {
     setShowJson(false);
+    setJsonData(null);
   };
 
-  // Change selected image
-  const handleSelectImage = (idx) => {
-    setSelectedIndex(idx);
+  // Open image modal
+  const handleOpenModal = (idx) => {
+    setModalIndex(idx);
   };
-
-  const selectedImage = images[selectedIndex];
+  const handleCloseModal = () => {
+    setModalIndex(null);
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center p-4">
@@ -102,43 +152,33 @@ function App() {
       {images.length > 0 && (
         <div className="flex flex-wrap gap-4 mb-4 w-full max-w-xl">
           {images.map((img, idx) => (
-            <div
+            <ImageTile
               key={idx}
-              className={`flex flex-col items-center p-2 rounded-lg border-2 cursor-pointer transition w-28 h-32 ${selectedIndex === idx ? "border-blue-500 bg-blue-50" : "border-gray-200 bg-white"}`}
-              onClick={() => handleSelectImage(idx)}
-            >
-              <img
-                src={img.url}
-                alt={`uploaded-${idx}`}
-                className="w-20 h-20 object-cover rounded mb-1"
-              />
-              <span className="text-xs text-gray-600 truncate w-full text-center">{img.file.name}</span>
-            </div>
+              img={img}
+              isSelected={selectedIndex === idx}
+              isLoading={img.status === "loading" || img.status === "pending"}
+              onClick={() => handleOpenModal(idx)}
+              onDownload={() => handleDownload(idx)}
+              onRepeat={() => handleRepeat(idx)}
+              onShowJson={() => handleShowJson(idx)}
+            />
           ))}
         </div>
       )}
-      {loading && <Loader />}
-      {selectedImage && selectedImage.result && selectedImage.result.objects && !loading && (
-        <ImagePreview image={selectedImage.url} objects={selectedImage.result.objects} />
-      )}
-      {selectedImage && !selectedImage.result && !loading && (
-        <button
-          onClick={handleSend}
-          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-        >
-          Send to API
-        </button>
-      )}
-      {selectedImage && selectedImage.result && !loading && (
-        <Controls
-          onRepeat={handleRepeat}
-          onDownload={handleDownload}
-          onShowJson={handleShowJson}
-          disabled={loading}
+      {/* Image modal with bbox and controls */}
+      {modalIndex !== null && images[modalIndex] && (
+        <ImageModal
+          image={images[modalIndex].url}
+          objects={Array.isArray(images[modalIndex].result?.objects) ? images[modalIndex].result.objects : []}
+          fileName={images[modalIndex].file.name}
+          onClose={handleCloseModal}
+          onDownload={() => handleDownload(modalIndex)}
+          onShowJson={() => handleShowJson(modalIndex)}
         />
       )}
-      {showJson && selectedImage && selectedImage.result && (
-        <JsonViewer data={selectedImage.result} onClose={handleCloseJson} />
+      {/* JSON modal */}
+      {showJson && (
+        <JsonViewer data={jsonData} onClose={handleCloseJson} />
       )}
     </div>
   );

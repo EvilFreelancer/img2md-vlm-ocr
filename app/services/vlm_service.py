@@ -14,8 +14,7 @@ OBJECTS_PROMPT = (
     "For each detected element, provide: "
     "1. A concise and descriptive label (e.g., 'heading', 'paragraph', 'list', 'table', 'section', etc.) "
     "2. A bounding box [x1, y1, x2, y2] that encompasses the entire grouped element. "
-    "3. The complete text content of the cluster, adjusted to the Markdown format. "
-    "Ignore 'manifest immigration' header and 'Manifest Law PLLC.' with page number footers."
+    "3. The complete text content of the cluster, adjusted to the Markdown format."
 )
 
 
