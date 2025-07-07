@@ -10,7 +10,7 @@ MAX_FILE_SIZE_MB = 25
 
 vlm_service = VLMService()
 
-@router.post("/predict/objects", response_model=ObjectsResponse)
+@router.post("/api/objects", response_model=ObjectsResponse)
 async def predict_objects(file: UploadFile = File(...)) -> ObjectsResponse:
     # Validate file size
     file.file.seek(0, 2)

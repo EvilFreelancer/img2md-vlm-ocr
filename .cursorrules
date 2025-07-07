@@ -1,3 +1,11 @@
+# Coding rules
+
+- Do not ask questions like "continue?", "should I?", "confirm?" — always take obvious and useful actions immediately.
+- If there is an explicit user instruction, execute it without clarifications.
+- If something needs to be created for user convenience (e.g., .env, documentation, auto-start), do it without extra questions.
+- All code comments must be in English.
+- The last line in new files must be empty.
+
 # Project Coding Rules
 
 ## File Endings
