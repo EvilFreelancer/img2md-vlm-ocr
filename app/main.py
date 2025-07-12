@@ -18,4 +18,3 @@ def root():
     return RedirectResponse(url="/docs")
 
 app.include_router(objects_router)
- 

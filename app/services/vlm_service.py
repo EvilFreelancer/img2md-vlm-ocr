@@ -8,14 +8,17 @@ from guidance.models._openai import OpenAIImageMixin, OpenAIInterpreter, OpenAI
 from guidance.models._base import Model
 from guidance.models._openai_base import ImageBlob
 
-OBJECTS_PROMPT = (
-    "Detect all distinct text blocks and key visual elements in the document image. "
-    "Group text lines that logically, semantically, and visually belong together into single elements cluster. "
-    "For each detected element, provide: "
-    "1. A concise and descriptive label (e.g., 'heading', 'paragraph', 'list', 'table', 'section', etc.) "
-    "2. A bounding box [x1, y1, x2, y2] that encompasses the entire grouped element. "
-    "3. The complete text content of the cluster, adjusted to the Markdown format."
-)
+OBJECTS_PROMPT = f"""\
+Detect all distinct text blocks, tables, and images (including diagrams, UI elements, or any other graphical information) in the document image.
+For images and tables, if there is a caption or label, the bounding box must include both the object and its caption.
+
+For each detected element, provide:
+1. An explicit and concise label indicating the type (e.g., 'heading', 'paragraph', 'list', 'table', 'image', etc.).
+2. Use 'image' for any graphical object (diagram, UI element, or other non-text graphics). Use 'table' for tables.
+3. A bounding box [x1, y1, x2, y2] that encompasses the entire grouped element (including caption if present).
+4. For images and tables: ONLY the text of the caption or label (if present) as the content. If there is no caption, leave this field empty.
+5. For other elements: the complete text content, adjusted to Markdown format.
+"""
 
 
 class CustomOpenAI(Model):
