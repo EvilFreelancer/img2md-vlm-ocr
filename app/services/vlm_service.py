@@ -28,12 +28,22 @@ class CustomOpenAI(Model):
         echo: bool = True,
         *,
         api_key: Optional[str] = None,
+        sampling_params: Optional[dict] = None,
         **kwargs,
     ):
         interpreter_cls = type(
             "OpenAIImageInterpreter", (OpenAIImageMixin, OpenAIInterpreter), {}
         )
-        super().__init__(interpreter=interpreter_cls(model, api_key=api_key, **kwargs), echo=echo)
+        if sampling_params is None:
+            sampling_params = {
+                "temperature": 0.2,
+                "top_p": 0.95,
+            }
+        super().__init__(
+            interpreter=interpreter_cls(model, api_key=api_key, **kwargs),
+            echo=echo,
+            sampling_params=sampling_params
+        )
 
 
 class VLMService(OpenAIService):
@@ -44,6 +54,7 @@ class VLMService(OpenAIService):
             api_key=self.api_key,
             base_url=self.base_url,
             # proxy=self.proxy,
+            # sampling_params can be customized here if needed
         )
 
     def predict_objects(self, image_bytes: bytes, prompt: str = OBJECTS_PROMPT, **kwargs):
