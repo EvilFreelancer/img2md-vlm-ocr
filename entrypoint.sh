@@ -10,4 +10,6 @@ uvicorn \
   --host ${APP_BIND} \
   --port ${APP_PORT} \
   --workers ${APP_WORKERS} \
+  --log-level debug \
+  --reload \
   app.main:app

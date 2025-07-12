@@ -2,12 +2,27 @@ x-shared-logs: &shared-logs
   logging:
     driver: "json-file"
     options:
-      max-size: "10k"
+      max-size: "100k"
 
 services:
-  app:
+  api:
     build:
       context: .
+    environment:
+      OPENAI_API_KEY: sk-xxx
+      OPENAI_BASE_URL: http://localhost:11434/v1
+      OPENAI_API_MODEL: qwen2.5vl:32b
     ports:
       - "8000:8000"
+    <<: *shared-logs
+
+  swagger:
+    restart: "unless-stopped"
+    image: swaggerapi/swagger-ui
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./openapi.yaml:/openapi.yaml
+    environment:
+      SWAGGER_JSON: /openapi.yaml
     <<: *shared-logs

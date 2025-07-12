@@ -4,7 +4,7 @@
 IMAGE_FILE="$1"
 
 # API endpoint
-API_URL="http://localhost:8000/predict/objects"
+API_URL="http://localhost:8000/api/objects"
 
 if [ ! -f "$IMAGE_FILE" ]; then
   echo "Test image $IMAGE_FILE not found. Please place a jpg file named test.jpg in the project root or specify another file."

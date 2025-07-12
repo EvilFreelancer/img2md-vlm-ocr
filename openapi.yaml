@@ -1,0 +1,112 @@
+openapi: 3.1.0
+info:
+  title: FastAPI
+  version: 0.1.0
+servers:
+  - url: http://localhost:8000/api
+paths:
+  /objects:
+    post:
+      summary: Predict Objects
+      operationId: predict_objects_api_objects_post
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_predict_objects_api_objects_post'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObjectsResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+components:
+  schemas:
+    Body_predict_objects_api_objects_post:
+      properties:
+        file:
+          type: string
+          format: binary
+          title: File
+      type: object
+      required:
+      - file
+      title: Body_predict_objects_api_objects_post
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    ObjectBlock:
+      properties:
+        bbox_2d:
+          items:
+            type: integer
+          type: array
+          title: Bbox 2D
+          description: Coordinates of the object bounding box [x1, y1, x2, y2]
+        label:
+          type: string
+          title: Label
+          description: Document element label
+        text:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Text
+          description: Extracted text content from the detected area
+        confidence:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Confidence
+          description: Confidence score for the detection (0.0 to 1.0)
+      type: object
+      required:
+      - bbox_2d
+      - label
+      title: ObjectBlock
+    ObjectsResponse:
+      properties:
+        objects:
+          items:
+            $ref: '#/components/schemas/ObjectBlock'
+          type: array
+          title: Objects
+      type: object
+      required:
+      - objects
+      title: ObjectsResponse
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
