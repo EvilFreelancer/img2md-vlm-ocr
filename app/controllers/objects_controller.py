@@ -9,6 +9,7 @@ from fastapi import APIRouter, UploadFile, HTTPException, File, Request, Query
 from app.schemas.response_schema import ObjectsResponse
 from app.services.vlm_service import VLMService
 from app.services.segmentator_service import run_segmentation
+from app.utils.pad_to_multiple_of_28 import pad_to_multiple_of_28
 
 logging.basicConfig(
     level=logging.INFO,
@@ -30,24 +31,6 @@ MAX_SIZE_MB = 25
 MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024
 
 vlm_service = VLMService()
-
-
-def pad_to_multiple_of_28(img: Image.Image) -> Image.Image:
-    """
-    Pads the input image with white background so that both width and height
-    are at least 28 and multiples of 28, as required by some VLM models.
-    """
-    min_size = 28
-    w, h = img.size
-    new_w = max(min_size, math.ceil(w / min_size) * min_size)
-    new_h = max(min_size, math.ceil(h / min_size) * min_size)
-    if (w, h) == (new_w, new_h):
-        return img
-    # Create a new white image
-    new_img = Image.new("RGB", (new_w, new_h), (255, 255, 255))
-    # Paste the original image in the top-left corner
-    new_img.paste(img, (0, 0))
-    return new_img
 
 
 @router.post("/api/objects", response_model=ObjectsResponse)
