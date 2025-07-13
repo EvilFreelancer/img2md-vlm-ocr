@@ -1,6 +1,7 @@
 # Core
 pydantic~=2.11.7
 pydantic-settings~=2.10.1
+huggingface_hub~=0.33.4
 
 # API server
 fastapi~=0.115.14
@@ -10,6 +11,11 @@ python-multipart~=0.0.20
 # Image
 Pillow~=11.3.0
 pdf2image~=1.17.0
+opencv-python~=4.12.0.88
+
+# Segmentation
+ultralytics~=8.3.165
+dill~=0.4.0
 
 # Inference
 openai~=1.93.0
