@@ -132,6 +132,11 @@ def process_png(png_path, api_url, retries, out_dir):
         elif text:
             md_lines.append(text.strip())
     md_text = "\n\n".join(md_lines)
+    # Ensure markdown ends with a single empty line
+    if not md_text.endswith("\n\n"):
+        if not md_text.endswith("\n"):
+            md_text += "\n"
+        md_text += "\n"
     md_path = os.path.join(out_dir, f"{base}.md")
     with open(md_path, "w", encoding="utf-8") as f:
         f.write(md_text)
