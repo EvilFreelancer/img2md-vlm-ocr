@@ -2,6 +2,7 @@ import traceback
 import logging
 from PIL import Image
 import io
+import math
 
 from fastapi import APIRouter, UploadFile, HTTPException, File, Request, Query
 
@@ -18,11 +19,35 @@ logger = logging.getLogger("process_pdf")
 
 router = APIRouter()
 
+# Allowed types for VLM processing (except Picture)
+ALLOWED_TYPES = {
+    "text", "caption", "section-header", "footnote", "formula", "table",
+    "list-item", "page-header", "page-footer", "title"
+}
+
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "gif"}
 MAX_SIZE_MB = 25
 MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024
 
 vlm_service = VLMService()
+
+
+def pad_to_multiple_of_28(img: Image.Image) -> Image.Image:
+    """
+    Pads the input image with white background so that both width and height
+    are at least 28 and multiples of 28, as required by some VLM models.
+    """
+    min_size = 28
+    w, h = img.size
+    new_w = max(min_size, math.ceil(w / min_size) * min_size)
+    new_h = max(min_size, math.ceil(h / min_size) * min_size)
+    if (w, h) == (new_w, new_h):
+        return img
+    # Create a new white image
+    new_img = Image.new("RGB", (new_w, new_h), (255, 255, 255))
+    # Paste the original image in the top-left corner
+    new_img.paste(img, (0, 0))
+    return new_img
 
 
 @router.post("/api/objects", response_model=ObjectsResponse)
@@ -74,22 +99,28 @@ async def predict_objects(
             crop = img.crop((x1, y1, x2, y2))
             text = None
             logger.info(f"Detected block type: {type}")
-            if not bbox_only and type.lower() in ("text", "section-header", "page-footer", "table"):
+            if not bbox_only and type.lower() in ALLOWED_TYPES:
+                # Pad the crop to satisfy VLM requirements (min 28px, multiple of 28)
+                crop = pad_to_multiple_of_28(crop)
                 buf = io.BytesIO()
                 crop.save(buf, format="PNG")
                 crop_bytes = buf.getvalue()
                 try:
                     logger.info(f"Calling VLM for block type: {type} bbox: {bbox}")
                     text = vlm_service.extract_markdown(crop_bytes)
-                    logger.info(f"VLM result for block type: {type}: {text}")
+                    if text is None:
+                        logger.warning(f"VLM returned None for block type: {type}")
+                        text = ""
+                    else:
+                        logger.info(f"VLM result for block type: {type}: {text}")
                 except Exception as e:
                     logger.error(f"VLM error for block {type}: {e}")
-                    text = None
+                    text = ""
             obj = {
-                "type": type,
-                "bbox": [x1, y1, x2, y2],
+                "type":       type,
+                "bbox":       [x1, y1, x2, y2],
                 "confidence": confidence,
-                "text": text
+                "text":       text
             }
             objects.append(obj)
         return {"objects": objects}

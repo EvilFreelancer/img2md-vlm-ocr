@@ -29,8 +29,10 @@ For each detected element, provide:
 
 SIMPLE_MARKDOWN_PROMPT = """\
 Extract the content from the provided image fragment and return it as markdown.
-Respond ONLY in the following JSON format: {\"markdown\": \"<your_markdown_here>\"}
-Do NOT wrap your answer in triple backticks, code blocks, or any other formatting. Return only the raw markdown text.
+You MUST respond in the following JSON format: {"markdown": "<your_markdown_here>"}
+Do NOT wrap your answer in triple backticks, code blocks, or any other formatting. 
+Do NOT add any explanations or additional text. Return ONLY the JSON object.
+If the image contains no readable text, return {"markdown": ""}.
 """
 
 
@@ -90,7 +92,15 @@ class VLMService(OpenAIService):
             self.lm += ImageBlob(data=base64.b64encode(image_bytes))
         with guidance.assistant():
             self.lm += guidance.json(name="markdown", schema=MarkdownResponse)
+        
         result_json = self.lm["markdown"]
+        logger.info(f"Raw VLM response: {result_json}")
+        
+        # Handle empty or invalid responses
+        if not result_json or result_json.strip() == "":
+            logger.warning("VLM returned empty response")
+            return None
+            
         result_model = MarkdownResponse.model_validate_json(result_json).model_dump()
 
         # Return None if VLM returned None

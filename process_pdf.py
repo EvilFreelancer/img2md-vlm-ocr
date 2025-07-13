@@ -113,12 +113,18 @@ def process_png(png_path, api_url, retries, out_dir):
     picture_count = 0
     if not os.path.exists(picture_dir):
         os.makedirs(picture_dir)
+    # Allowed types to process (except Picture)
+    ALLOWED_TYPES = {
+        "text", "caption", "section-header", "footnote", "formula", "table",
+        "list-item", "page-header", "page-footer", "title"
+    }
     # Sort objects by top coordinate (y1) for top-to-bottom order
     objects_sorted = sorted(data.get("objects", []), key=lambda obj: obj.get("bbox", [0, 0, 0, 0])[1])
     for idx, obj in enumerate(objects_sorted):
         obj_type = obj.get("type", "")
         bbox = obj.get("bbox")
         text = obj.get("text")
+        logger.info(f"Processing object {idx}: type={obj_type}, text={'<empty>' if not text else text[:50] + '...' if len(text) > 50 else text}")
         if obj_type.lower() == "picture" and bbox:
             picture_count += 1
             x1, y1, x2, y2 = map(int, bbox)
@@ -129,8 +135,10 @@ def process_png(png_path, api_url, retries, out_dir):
             logger.info(f"Saved picture crop: {pic_path}")
             # Add markdown image link
             md_lines.append(f"![]({os.path.basename(picture_dir)}/{pic_filename})")
-        elif text:
+        elif obj_type.lower() in ALLOWED_TYPES and text and text.strip():
             md_lines.append(text.strip())
+        elif obj_type.lower() in ALLOWED_TYPES and (not text or not text.strip()):
+            logger.warning(f"Skipping {obj_type} block with empty text")
     md_text = "\n\n".join(md_lines)
     # Ensure markdown ends with a single empty line
     if not md_text.endswith("\n"):

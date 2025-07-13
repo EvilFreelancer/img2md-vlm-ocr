@@ -58,3 +58,4 @@ def run_segmentation(img) -> list:
             "confidence": confidence
         })
     return detections
+ 
