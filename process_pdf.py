@@ -7,6 +7,7 @@ import requests
 import json
 from pdf2image import convert_from_path
 from PIL import Image
+import shutil
 
 logging.basicConfig(
     level=logging.INFO,
@@ -82,6 +83,61 @@ def extract_and_save_bbox_objects(objects, png_path, out_dir):
     return obj_dir
 
 
+def process_png(png_path, api_url, retries, out_dir):
+    # Process a single PNG file: send to API, handle response, save markdown and pictures
+    logger.info(f"Processing {png_path}")
+    with open(png_path, "rb") as f:
+        img_bytes = f.read()
+    for attempt in range(retries):
+        try:
+            response = requests.post(api_url, files={"file": (os.path.basename(png_path), img_bytes, "image/png")})
+            if response.status_code == 200:
+                data = response.json()
+                break
+            else:
+                logger.warning(f"API returned status {response.status_code}: {response.text}")
+        except Exception as e:
+            logger.error(f"API request failed: {e}")
+        if attempt < retries - 1:
+            logger.info(f"Retrying ({attempt+1}/{retries})...")
+            time.sleep(1)
+    else:
+        logger.error(f"Failed to get valid response from API after {retries} attempts.")
+        return
+    # Open image for cropping
+    img = Image.open(png_path).convert("RGB")
+    # Prepare output paths
+    base = os.path.splitext(os.path.basename(png_path))[0]
+    md_lines = []
+    picture_dir = os.path.join(out_dir, base)
+    picture_count = 0
+    if not os.path.exists(picture_dir):
+        os.makedirs(picture_dir)
+    # Sort objects by top coordinate (y1) for top-to-bottom order
+    objects_sorted = sorted(data.get("objects", []), key=lambda obj: obj.get("bbox", [0, 0, 0, 0])[1])
+    for idx, obj in enumerate(objects_sorted):
+        obj_type = obj.get("type", "")
+        bbox = obj.get("bbox")
+        text = obj.get("text")
+        if obj_type.lower() == "picture" and bbox:
+            picture_count += 1
+            x1, y1, x2, y2 = map(int, bbox)
+            crop = img.crop((x1, y1, x2, y2))
+            pic_filename = f"{picture_count}.png"
+            pic_path = os.path.join(picture_dir, pic_filename)
+            crop.save(pic_path)
+            logger.info(f"Saved picture crop: {pic_path}")
+            # Add markdown image link
+            md_lines.append(f"![]({os.path.basename(picture_dir)}/{pic_filename})")
+        elif text:
+            md_lines.append(text.strip())
+    md_text = "\n\n".join(md_lines)
+    md_path = os.path.join(out_dir, f"{base}.md")
+    with open(md_path, "w", encoding="utf-8") as f:
+        f.write(md_text)
+    logger.info(f"Saved markdown: {md_path}")
+
+
 def parse_pages(pages_str, total_pages):
     # Parse the --pages argument and return a list of page numbers to process
     if not pages_str:
@@ -133,28 +189,7 @@ def main():
     # Filter PNG files by selected pages
     png_files = [all_png_files[i - 1] for i in page_numbers if 1 <= i <= total_pages]
     for png_path in png_files:
-        data = post_image(api_url, png_path, retries=retries)
-        if not data:
-            logger.error(f"Skipping {png_path} due to empty/failed response")
-            continue
-
-        # Collect markdown from all objects (only text fields)
-        md_lines = []
-        for obj in data.get("objects", []):
-            text = obj.get("text")
-            if text:
-                label = obj.get("label", "")
-                if label == "heading":
-                    md_lines.append(f"## {text.strip()}")
-                else:
-                    md_lines.append(text.strip())
-        md_text = "\n\n".join(md_lines)
-        md_path = save_markdown(md_text, png_path)
-
-        # If there are tables or images, save crops by bbox
-        has_special = any(obj.get("label") in ("table", "image") for obj in data.get("objects", []))
-        if has_special:
-            extract_and_save_bbox_objects(data["objects"], png_path, out_dir)
+        process_png(png_path, api_url, retries, out_dir)
 
 
 if __name__ == "__main__":

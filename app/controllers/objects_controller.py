@@ -3,7 +3,7 @@ import logging
 from PIL import Image
 import io
 
-from fastapi import APIRouter, UploadFile, HTTPException, File, Request
+from fastapi import APIRouter, UploadFile, HTTPException, File, Request, Query
 
 from app.schemas.response_schema import ObjectsResponse
 from app.services.vlm_service import VLMService
@@ -26,7 +26,11 @@ vlm_service = VLMService()
 
 
 @router.post("/api/objects", response_model=ObjectsResponse)
-async def predict_objects(request: Request, file: UploadFile = File(...)) -> ObjectsResponse:
+async def predict_objects(
+    request: Request,
+    file: UploadFile = File(...),
+    bbox_only: bool = Query(False, description="If true, only return bboxes and do not call VLM")
+) -> ObjectsResponse:
     try:
         # Log incoming request details
         logger.info(f"Incoming request: {request.method} {request.url.path} from {request.client.host}")
@@ -70,7 +74,7 @@ async def predict_objects(request: Request, file: UploadFile = File(...)) -> Obj
             crop = img.crop((x1, y1, x2, y2))
             text = None
             logger.info(f"Detected block type: {type}")
-            if type.lower() in ("text", "section-header", "page-footer", "table"):
+            if not bbox_only and type.lower() in ("text", "section-header", "page-footer", "table"):
                 buf = io.BytesIO()
                 crop.save(buf, format="PNG")
                 crop_bytes = buf.getvalue()
@@ -94,47 +98,3 @@ async def predict_objects(request: Request, file: UploadFile = File(...)) -> Obj
         tb = traceback.format_exc()
         logger.error(f"Error in predict_objects: {e}\n{tb}")
         raise HTTPException(status_code=502, detail=f"VLM API error: {e}\n{tb}")
-
-
-@router.post("/api/bbox")
-async def get_bboxes(request: Request, file: UploadFile = File(...)):
-    try:
-        # Log incoming request details
-        logger.info(f"Incoming request: {request.method} {request.url.path} from {request.client.host}")
-        logger.info(f"Headers: {dict(request.headers)}")
-        logger.info(f"Query params: {dict(request.query_params)}")
-
-        file.file.seek(0, 2)
-        size_bytes = file.file.tell()
-        file.file.seek(0)
-        size_mb = size_bytes / (1024 * 1024)
-        logger.info(f"Received file: {file.filename}, size: {size_mb:.2f} MB, content_type: {file.content_type}")
-        if size_bytes > MAX_SIZE_BYTES:
-            logger.warning(f"File too large: {size_mb:.2f} MB (limit: {MAX_SIZE_MB} MB)")
-            raise HTTPException(status_code=400, detail=f"File too large. Max size is {MAX_SIZE_MB} MB.")
-
-        ext = file.filename.split(".")[-1].lower()
-        if ext not in ALLOWED_EXTENSIONS:
-            logger.warning(f"File type not allowed: {ext}")
-            raise HTTPException(status_code=400, detail="File type not allowed. Only jpg, png, gif are supported.")
-
-        # Save file to a temporary location if needed, or use in-memory
-        image_bytes = await file.read()
-        img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-        detections = run_segmentation(img)
-        logger.info(f"Segmentation found {len(detections)} blocks")
-
-        # Return only type, bbox, confidence
-        return [
-            {
-                "type":       det["type"],
-                "bbox":       det["bbox"],
-                "confidence": det.get("confidence")
-            }
-            for det in detections
-        ]
-
-    except Exception as e:
-        tb = traceback.format_exc()
-        logger.error(f"Error in get_bboxes: {e}\n{tb}")
-        raise HTTPException(status_code=502, detail=f"BBox API error: {e}\n{tb}")
