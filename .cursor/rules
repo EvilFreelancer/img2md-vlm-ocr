@@ -22,6 +22,7 @@
         - controllers/ # Controllers: business logic, request handling
         - services/ # Services: external API/model logic
         - schemas/ # Pydantic schemas for request/response
+        - utils/ # Utility functions (e.g., image processing, padding, etc.)
         - settings.py # Project and model settings (Pydantic)
         - main.py # FastAPI entry point
     - requirements.txt # Dependencies

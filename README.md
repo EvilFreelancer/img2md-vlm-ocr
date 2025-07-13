@@ -1,67 +1,79 @@
 # Markdown OCR VLM API
 
-## Launch (local)
+## Overview
+
+Markdown OCR VLM API is a service for extracting document structure and content (in Markdown format) from images using
+segmentation and vision-language models (VLM). It provides a REST API, CLI tools, and a web interface for convenient
+document processing.
+
+## Main Components
+
+- **Backend (FastAPI)**: REST API for image processing, object detection, and text extraction.
+- **Frontend (React UI)**: Web interface for uploading images, visualizing results, and downloading markup.
+- **CLI Tools**:
+    - `process_pdf.py` — Batch PDF processing (convert to PNG, send to API, save Markdown and images).
+    - `merge_markdown.py` — Merge Markdown files and copy related images.
+    - `doc_layout_detection_test.py` — Test the segmentator: detect blocks in an image, save annotated image and JSON.
+
+## Installation & Launch
+
+### Local (Python)
 
 ```bash
+pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
-## Environment variables
-
-All configuration is managed via a `.env` file in the project root. See `.env.dist` for an example.
-
-Required variables:
-
-- `HOST` — (optional) server host (default: 0.0.0.0)
-- `PORT` — (optional) server port (default: 8000)
-- `OPENAI_API_KEY` — your OpenAI API key
-- `OPENAI_API_ENDPOINT` — (optional) OpenAI API endpoint (default: https://api.openai.com/v1/chat/completions)
-- `OPENAI_API_MODEL` — (optional) OpenAI model name (default: gpt-4o)
-
-Copy `.env.dist` to `.env` and fill in your values:
-
-```bash
-cp .env.dist .env
-```
-
-## Docker
-
-Build and run the app in Docker:
+### Docker
 
 ```bash
 docker build -t markdown-ocr .
 docker run --env-file .env -p 8000:8000 markdown-ocr
 ```
 
-## Docker Compose
-
-You can use the provided `docker-compose.dist.yaml` as a template:
+### Docker Compose
 
 ```bash
 cp docker-compose.dist.yaml docker-compose.yaml
 docker compose up --build
 ```
 
-## Endpoint
+## Environment Variables
 
-POST `/predict/objects`
+All configuration is managed via a `.env` file in the project root (see `.env.dist` for an example):
 
-- Accepts: image (multipart/form-data, field `file`)
-- Returns: JSON with bbox, label, text, confidence (see example below)
+- `OPENAI_API_KEY` — your OpenAI API key (required)
+- `OPENAI_BASE_URL` — OpenAI API endpoint (default: https://api.openai.com/v1)
+- `OPENAI_API_MODEL` — OpenAI model name (default: gpt-4o)
+- `HOST`, `PORT` — server host and port (optional)
+- `SEGMENTATOR_*` — segmentator parameters (see `app/settings.py`)
 
-### Example response
+## API
+
+### POST `/api/objects`
+
+- **Parameters**: image (multipart/form-data, field `file`), optional `bbox_only` (bool)
+- **Response**: JSON array of objects (type, bbox, text, confidence)
+
+**Example request:**
+
+```bash
+curl -F "file=@page1.png" http://localhost:8000/api/objects
+```
+
+**Example response:**
 
 ```json
 {
   "objects": [
     {
-      "bbox_2d": [
+      "type": "table",
+      "bbox": [
         54,
         126,
         532,
         434
       ],
-      "label": "table",
       "text": "Table content...",
       "confidence": 0.98
     }
@@ -69,17 +81,45 @@ POST `/predict/objects`
 }
 ```
 
-## Project structure
+**OpenAPI specification:** see `openapi.yaml` or Swagger UI at `/docs`.
 
-- app/
-    - controllers/ # Business logic, request handling
-    - services/ # External API/model logic
-    - schemas/ # Pydantic schemas for request/response
-    - settings.py # Project and model settings (Pydantic)
-    - main.py # FastAPI entry point
-- requirements.txt # Dependencies
-- README.md # Project documentation
-- .env.dist # Example environment config
-- Dockerfile # Docker build file
-- entrypoint.sh # Entrypoint script for Docker
-- docker-compose.dist.yaml # Example docker-compose config
+## Web Interface (UI)
+
+- Located in the `ui/` folder
+- Quick start:
+    1. Create `.env` in `ui/`:
+       ```
+       REACT_APP_API_URL=http://localhost:8000/api/objects
+       ```
+    2. Run:
+       ```bash
+       cd ui
+       npm install
+       npm start
+       ```
+- Features: drag & drop upload, preview, bbox overlay, download, JSON view, repeat request.
+
+## CLI Tools
+
+- **process_pdf.py** — PDF processing:
+  ```bash
+  python process_pdf.py -i input.pdf -o output_dir
+  ```
+    - Converts PDF to PNG, sends pages to API, saves Markdown and cropped images.
+- **merge_markdown.py** — Merge Markdown:
+  ```bash
+  python merge_markdown.py -i input_dir -o merged.md -m media_dir
+  ```
+    - Collects all Markdown files from a folder, copies images, rewrites paths.
+- **doc_layout_detection_test.py** — Segmentator test:
+  ```bash
+  python doc_layout_detection_test.py path/to/image.png
+  ```
+    - Saves annotated image and JSON with bounding boxes.
+
+## Requirements
+
+- Python 3.12+
+- FastAPI, Uvicorn, Pillow, pdf2image, ultralytics, huggingface_hub, openai, guidance, and others (see
+  `requirements.txt`)
+- For frontend: Node.js, npm, React, TailwindCSS

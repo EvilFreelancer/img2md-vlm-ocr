@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
-  title: FastAPI
-  version: 0.1.0
+  title: Markdown OCR VLM API
+  version: 1.0.0
 servers:
   - url: http://localhost:8000/api
 paths:
@@ -15,6 +15,13 @@ paths:
             schema:
               $ref: '#/components/schemas/Body_predict_objects_api_objects_post'
         required: true
+      parameters:
+        - name: bbox_only
+          in: query
+          required: false
+          schema:
+            type: boolean
+          description: If true, only return bounding boxes and do not extract text
       responses:
         '200':
           description: Successful Response
@@ -22,6 +29,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ObjectsResponse'
+        '400':
+          description: Bad Request
         '422':
           description: Validation Error
           content:
@@ -51,22 +60,22 @@ components:
       title: HTTPValidationError
     ObjectBlock:
       properties:
-        bbox_2d:
+        type:
+          type: string
+          title: Type
+          description: Document element type (e.g., text, table, image, etc.)
+        bbox:
           items:
             type: integer
           type: array
-          title: Bbox 2D
+          title: Bbox
           description: Coordinates of the object bounding box [x1, y1, x2, y2]
-        label:
-          type: string
-          title: Label
-          description: Document element label
         text:
           anyOf:
           - type: string
           - type: 'null'
           title: Text
-          description: Extracted text content from the detected area
+          description: Extracted markdown or text content from the detected area
         confidence:
           anyOf:
           - type: number
@@ -75,8 +84,8 @@ components:
           description: Confidence score for the detection (0.0 to 1.0)
       type: object
       required:
-      - bbox_2d
-      - label
+      - type
+      - bbox
       title: ObjectBlock
     ObjectsResponse:
       properties:
