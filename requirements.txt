@@ -1,12 +1,17 @@
+# Core
+pydantic~=2.11.7
+pydantic-settings~=2.10.1
+
 # API server
 fastapi~=0.115.14
 uvicorn~=0.35.0
 python-multipart~=0.0.20
 
+# Image
+Pillow~=11.3.0
+pdf2image~=1.17.0
+
 # Inference
 openai~=1.93.0
 requests~=2.32.4
-pydantic~=2.11.7
-pydantic-settings~=2.10.1
 guidance~=0.2.3
-Pillow~=11.3.0

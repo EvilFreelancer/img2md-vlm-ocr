@@ -1,6 +1,8 @@
 /.idea/
 /.venv/
 /input/
+/output/
+/input.*/
 node_modules
 __pycache__
 .env
