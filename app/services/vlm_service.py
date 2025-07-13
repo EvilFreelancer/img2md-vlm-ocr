@@ -20,6 +20,12 @@ For each detected element, provide:
 5. For other elements: the complete text content, adjusted to Markdown format.
 """
 
+SIMPLE_MARKDOWN_PROMPT = f"""\
+Extract the content from the provided image fragment and return it as markdown.
+Do not include any bounding box or detection information.
+Only return the markdown text.
+"""
+
 
 class CustomOpenAI(Model):
     def __init__(
@@ -69,3 +75,12 @@ class VLMService(OpenAIService):
             self.lm += guidance.json(name="objects", schema=ObjectsResponse)
         result_json = self.lm["objects"]
         return ObjectsResponse.model_validate_json(result_json).model_dump()
+
+    def extract_markdown(self, image_bytes: bytes, prompt: str = SIMPLE_MARKDOWN_PROMPT, **kwargs) -> str:
+        # Run VLM on a cropped image fragment to get markdown only
+        with guidance.user():
+            self.lm += prompt
+            self.lm += ImageBlob(data=base64.b64encode(image_bytes))
+        with guidance.assistant():
+            self.lm += guidance.json(name="markdown", schema="str")
+        return self.lm["markdown"]
