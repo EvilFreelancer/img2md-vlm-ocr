@@ -53,7 +53,7 @@ async def predict_objects(request: Request, file: UploadFile = File(...)) -> Obj
         logger.info(f"Original image size: {width}x{height}")
 
         # Run segmentation to get layout blocks
-        detections = run_segmentation(file.filename)
+        detections = run_segmentation(img)
         logger.info(f"Segmentation found {len(detections)} blocks")
 
         objects = []
@@ -62,7 +62,6 @@ async def predict_objects(request: Request, file: UploadFile = File(...)) -> Obj
             bbox = det["bbox"]  # [x1, y1, x2, y2]
             confidence = det.get("confidence")
             x1, y1, x2, y2 = map(int, bbox)
-
             # Clamp coordinates to image size
             x1 = max(0, min(x1, width - 1))
             y1 = max(0, min(y1, height - 1))
@@ -70,26 +69,26 @@ async def predict_objects(request: Request, file: UploadFile = File(...)) -> Obj
             y2 = max(0, min(y2, height))
             crop = img.crop((x1, y1, x2, y2))
             text = None
-            if type in ("Text", "Section-header", "Table"):
+            logger.info(f"Detected block type: {type}")
+            if type.lower() in ("text", "section-header", "page-footer", "table"):
                 buf = io.BytesIO()
                 crop.save(buf, format="PNG")
                 crop_bytes = buf.getvalue()
                 try:
+                    logger.info(f"Calling VLM for block type: {type} bbox: {bbox}")
                     text = vlm_service.extract_markdown(crop_bytes)
+                    logger.info(f"VLM result for block type: {type}: {text}")
                 except Exception as e:
                     logger.error(f"VLM error for block {type}: {e}")
                     text = None
-
-            # For Picture, do not call VLM
             obj = {
-                "type":       type,
-                "bbox":       [x1, y1, x2, y2],
+                "type": type,
+                "bbox": [x1, y1, x2, y2],
                 "confidence": confidence,
-                "text":       text
+                "text": text
             }
             objects.append(obj)
-
-        return objects
+        return {"objects": objects}
 
     except Exception as e:
         tb = traceback.format_exc()
@@ -120,7 +119,9 @@ async def get_bboxes(request: Request, file: UploadFile = File(...)):
             raise HTTPException(status_code=400, detail="File type not allowed. Only jpg, png, gif are supported.")
 
         # Save file to a temporary location if needed, or use in-memory
-        detections = run_segmentation(file.filename)
+        image_bytes = await file.read()
+        img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+        detections = run_segmentation(img)
         logger.info(f"Segmentation found {len(detections)} blocks")
 
         # Return only type, bbox, confidence

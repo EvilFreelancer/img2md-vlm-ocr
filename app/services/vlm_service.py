@@ -1,12 +1,19 @@
 import base64
 import guidance
 from typing import Optional
-from app.services.openai_service import OpenAIService
-from app.schemas.response_schema import ObjectsResponse
-from app.settings import settings
-from guidance.models._openai import OpenAIImageMixin, OpenAIInterpreter, OpenAI
+import logging
+
+from guidance.models._openai import OpenAIImageMixin, OpenAIInterpreter
 from guidance.models._base import Model
 from guidance.models._openai_base import ImageBlob
+
+from app.services.openai_service import OpenAIService
+from app.schemas.response_schema import ObjectsResponse
+from app.schemas.response_schema import MarkdownResponse
+from app.settings import settings
+
+logger = logging.getLogger(__name__)
+
 
 OBJECTS_PROMPT = f"""\
 Detect all distinct text blocks, tables, and images (including diagrams, UI elements, or any other graphical information) in the document image.
@@ -20,10 +27,10 @@ For each detected element, provide:
 5. For other elements: the complete text content, adjusted to Markdown format.
 """
 
-SIMPLE_MARKDOWN_PROMPT = f"""\
+SIMPLE_MARKDOWN_PROMPT = """\
 Extract the content from the provided image fragment and return it as markdown.
-Do not include any bounding box or detection information.
-Only return the markdown text.
+Respond ONLY in the following JSON format: {\"markdown\": \"<your_markdown_here>\"}
+Do NOT wrap your answer in triple backticks, code blocks, or any other formatting. Return only the raw markdown text.
 """
 
 
@@ -48,7 +55,7 @@ class CustomOpenAI(Model):
         super().__init__(
             interpreter=interpreter_cls(model, api_key=api_key, **kwargs),
             echo=echo,
-            sampling_params=sampling_params
+            #sampling_params=sampling_params
         )
 
 
@@ -82,5 +89,19 @@ class VLMService(OpenAIService):
             self.lm += prompt
             self.lm += ImageBlob(data=base64.b64encode(image_bytes))
         with guidance.assistant():
-            self.lm += guidance.json(name="markdown", schema="str")
-        return self.lm["markdown"]
+            self.lm += guidance.json(name="markdown", schema=MarkdownResponse)
+        result_json = self.lm["markdown"]
+        result_model = MarkdownResponse.model_validate_json(result_json).model_dump()
+
+        # Return None if VLM returned None
+        if result_model is None or result_model.get("markdown") is None:
+            logger.warning("VLM returned None")
+            return None
+        markdown = result_model["markdown"]
+
+        # Remove triple backticks and code block wrappers if present
+        if markdown is not None:
+            import re
+            # Remove ```markdown ... ``` or ``` ... ```
+            markdown = re.sub(r"^```[a-zA-Z]*\n([\s\S]*?)\n```$", r"\1", markdown.strip())
+        return markdown
