@@ -11,6 +11,19 @@ logging.basicConfig(
 )
 logger = logging.getLogger("merge_markdown")
 
+def extract_page_number(filename):
+    # Try to extract a page number from the filename (e.g., _page_2.md or page2.md)
+    match = re.search(r'_page_(\d+)', filename)
+    if match:
+        return int(match.group(1))
+    match = re.search(r'page(\d+)', filename)
+    if match:
+        return int(match.group(1))
+    match = re.search(r'(\d+)', filename)
+    if match:
+        return int(match.group(1))
+    return None
+
 def find_markdown_files(input_dir):
     # Recursively find all .md files in the input directory
     md_files = []
@@ -18,7 +31,12 @@ def find_markdown_files(input_dir):
         for file in files:
             if file.lower().endswith('.md'):
                 md_files.append(os.path.join(root, file))
-    return sorted(md_files)
+    # Sort by page number if possible, otherwise alphabetically
+    def sort_key(path):
+        fname = os.path.basename(path)
+        page = extract_page_number(fname)
+        return (0, page) if page is not None else (1, fname)
+    return sorted(md_files, key=sort_key)
 
 def copy_and_rewrite_images(md_text, md_path, media_dir, media_prefix):
     # Find all image links in markdown and copy images to media_dir, rewrite paths
