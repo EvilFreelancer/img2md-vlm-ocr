@@ -20,4 +20,5 @@ dill~=0.4.0
 # Inference
 openai~=1.93.0
 requests~=2.32.4
-guidance~=0.2.3
+guidance==0.2.3
+llguidance==0.7.26

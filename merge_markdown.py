@@ -65,27 +65,28 @@ def copy_and_rewrite_images(md_text, md_path, media_dir, media_prefix):
     new_text = pattern.sub(replacer, md_text)
     return new_text
 
-def merge_markdown_files(input_dir, output_md, output_media_dir):
+def merge_markdown_files(input_dirs, output_md, output_media_dir):
     if not os.path.exists(output_media_dir):
         os.makedirs(output_media_dir)
-    md_files = find_markdown_files(input_dir)
-    logger.info(f"Found {len(md_files)} markdown files.")
     merged_lines = []
-    for md_path in md_files:
-        logger.info(f"Processing {md_path}")
-        with open(md_path, 'r', encoding='utf-8') as f:
-            md_text = f.read()
-        # Copy images and rewrite paths
-        md_text = copy_and_rewrite_images(md_text, md_path, output_media_dir, os.path.basename(output_media_dir) + '/')
-        merged_lines.append(md_text)
-        merged_lines.append('\n')
+    for input_dir in input_dirs:
+        md_files = find_markdown_files(input_dir)
+        logger.info(f"[{input_dir}] Found {len(md_files)} markdown files.")
+        for md_path in md_files:
+            logger.info(f"Processing {md_path}")
+            with open(md_path, 'r', encoding='utf-8') as f:
+                md_text = f.read()
+            # Copy images and rewrite paths
+            md_text = copy_and_rewrite_images(md_text, md_path, output_media_dir, os.path.basename(output_media_dir) + '/')
+            merged_lines.append(md_text)
+            merged_lines.append('\n')
     with open(output_md, 'w', encoding='utf-8') as f:
         f.write('\n'.join(merged_lines))
     logger.info(f"Merged markdown written to {output_md}")
 
 def main():
     parser = argparse.ArgumentParser(description="Merge markdown files and copy images.")
-    parser.add_argument('--input-dir', '-i', required=True, help='Input directory with markdown files')
+    parser.add_argument('--input-dir', '-i', action='append', required=True, help='Input directory with markdown files (can be specified multiple times, order is preserved)')
     parser.add_argument('--output-md', '-o', required=True, help='Output merged markdown file')
     parser.add_argument('--output-media-dir', '-m', required=True, help='Directory to copy images to')
     args = parser.parse_args()
