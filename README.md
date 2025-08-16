@@ -6,6 +6,14 @@ Markdown OCR VLM API is a service for extracting document structure and content 
 segmentation and vision-language models (VLM). It provides a REST API, CLI tools, and a web interface for convenient
 document processing.
 
+## Requirements
+
+- Python 3.12+
+- FastAPI, Uvicorn, Pillow, pdf2image, ultralytics, huggingface_hub, openai, guidance, and others (see
+  `requirements.txt`)
+- For frontend: Node.js, npm, React, TailwindCSS
+- For Docker: Docker and Docker Compose
+
 ## Main Components
 
 - **Backend (FastAPI)**: REST API for image processing, object detection, and text extraction.
@@ -31,12 +39,17 @@ docker build -t markdown-ocr .
 docker run --env-file .env -p 8000:8000 markdown-ocr
 ```
 
-### Docker Compose
+### Docker Compose (Recommended)
 
 ```bash
 cp docker-compose.dist.yaml docker-compose.yaml
 docker compose up --build
 ```
+
+This will start:
+- **API service** on port 8000
+- **Frontend service** on port 3000 (React app served by nginx)
+- **Swagger UI** on port 8080
 
 ## Environment Variables
 
@@ -86,17 +99,22 @@ curl -F "file=@page1.png" http://localhost:8000/api/objects
 ## Web Interface (UI)
 
 - Located in the `ui/` folder
-- Quick start:
-    1. Create `.env` in `ui/`:
-       ```
-       REACT_APP_API_URL=http://localhost:8000/api/objects
-       ```
-    2. Run:
-       ```bash
-       cd ui
-       npm install
-       npm start
-       ```
+- **Docker (Recommended)**:
+  ```bash
+  docker compose up --build frontend
+  # Access at http://localhost:3000
+  ```
+- **Local development**:
+  1. Create `.env` in `ui/`:
+     ```
+     REACT_APP_API_URL=http://localhost:8000/api/objects
+     ```
+  2. Run:
+     ```bash
+     cd ui
+     npm install
+     npm start
+     ```
 - Features: drag & drop upload, preview, bbox overlay, download, JSON view, repeat request.
 
 ## CLI Tools
@@ -116,10 +134,3 @@ curl -F "file=@page1.png" http://localhost:8000/api/objects
   python doc_layout_detection_test.py path/to/image.png
   ```
     - Saves annotated image and JSON with bounding boxes.
-
-## Requirements
-
-- Python 3.12+
-- FastAPI, Uvicorn, Pillow, pdf2image, ultralytics, huggingface_hub, openai, guidance, and others (see
-  `requirements.txt`)
-- For frontend: Node.js, npm, React, TailwindCSS

@@ -1,12 +1,13 @@
-# Markdown OCR UI
+# Markdown OCR Frontend
 
-A simple React application for uploading images, sending them to an API, and displaying results with bounding boxes over the images.
+React UI for Markdown OCR API with image upload, bbox overlay, and JSON viewer.
 
-## Quick Start
+## Development
 
-1. Create a `.env` file in the `ui` folder with the following content:
+### Quick start:
+1. Create `.env` in `ui/`:
    ```
-   REACT_APP_API_URL=http://localhost:8000/predict/objects
+   REACT_APP_API_URL=http://localhost:8000/api/objects
    ```
 2. Run:
    ```bash
@@ -15,22 +16,28 @@ A simple React application for uploading images, sending them to an API, and dis
    npm start
    ```
 
+## Docker
+
+### Build and run with docker-compose:
+```bash
+# From project root
+docker-compose up --build frontend
+```
+
+### Build standalone:
+```bash
+cd ui
+docker build -t markdown-ocr-frontend .
+docker run -p 3000:80 markdown-ocr-frontend
+```
+
 ## Features
-- Drag & Drop upload for one or multiple images (tile preview)
-- API URL is configured via env
-- Loading animation
-- Display bounding boxes over images
-- Repeat button
-- Download image with boxes
-- View JSON response
+- Drag & drop image upload
+- Image preview with bounding boxes
+- JSON result viewer
+- Download annotated images
+- Repeat request functionality
+- Responsive design with TailwindCSS
 
-## Project Structure
-- `src/components/` — React UI components
-- `src/App.js` — Main application logic
-- `.env` — API URL configuration
-
-## API Endpoint
-The backend endpoint for image upload and object detection must be available at:
-```
-POST http://localhost:8000/predict/objects
-```
+## Environment Variables
+- `REACT_APP_API_URL` - API endpoint for object detection (default: http://localhost:8000/api/objects)

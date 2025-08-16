@@ -16,6 +16,18 @@ services:
       - "8000:8000"
     <<: *shared-logs
 
+  frontend:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+      args:
+        REACT_APP_API_URL: http://localhost:8000/api/objects
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+    <<: *shared-logs
+
   swagger:
     restart: "unless-stopped"
     image: swaggerapi/swagger-ui
