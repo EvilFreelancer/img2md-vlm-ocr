@@ -25,7 +25,81 @@ function getLabelColor(label) {
 function ImageModal({image, objects, fileName, onClose, onDownload, onShowJson}) {
     const canvasRef = useRef(null);
     const [showBbox, setShowBbox] = useState(true);
-    const [imgDims, setImgDims] = useState({width: 0, height: 0});
+    const [zoom, setZoom] = useState(1);
+    const [panOffset, setPanOffset] = useState({x: 0, y: 0});
+    const [isDragging, setIsDragging] = useState(false);
+    const [dragStart, setDragStart] = useState({x: 0, y: 0});
+    const [hasChanges, setHasChanges] = useState(false);
+
+    // Zoom controls
+    const handleZoomIn = () => {
+        const canvas = canvasRef.current;
+        if (canvas) {
+            // Zoom towards center of canvas
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
+            const newZoom = Math.min(zoom * 1.5, 5);
+            const zoomRatio = newZoom / zoom;
+            const newPanX = centerX - (centerX - panOffset.x) * zoomRatio;
+            const newPanY = centerY - (centerY - panOffset.y) * zoomRatio;
+            
+            setZoom(newZoom);
+            setPanOffset({x: newPanX, y: newPanY});
+            setHasChanges(true);
+        }
+    };
+    
+    const handleZoomOut = () => {
+        const canvas = canvasRef.current;
+        if (canvas) {
+            // Zoom towards center of canvas
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
+            const newZoom = Math.max(zoom / 1.5, 0.5);
+            const zoomRatio = newZoom / zoom;
+            const newPanX = centerX - (centerX - panOffset.x) * zoomRatio;
+            const newPanY = centerY - (centerY - panOffset.y) * zoomRatio;
+            
+            setZoom(newZoom);
+            setPanOffset({x: newPanX, y: newPanY});
+            setHasChanges(true);
+        }
+    };
+    const handleResetZoom = () => {
+        setZoom(1);
+        setPanOffset({x: 0, y: 0});
+        setHasChanges(false);
+    };
+
+    // Pan controls
+    const handleMouseDown = (e) => {
+        setIsDragging(true);
+        setDragStart({
+            x: e.clientX - panOffset.x,
+            y: e.clientY - panOffset.y
+        });
+    };
+
+    const handleMouseMove = (e) => {
+        if (isDragging) {
+            const newPanX = e.clientX - dragStart.x;
+            const newPanY = e.clientY - dragStart.y;
+            setPanOffset({x: newPanX, y: newPanY});
+            setHasChanges(true);
+        }
+    };
+
+    const handleMouseUp = () => {
+        setIsDragging(false);
+    };
+
+    // Get cursor style based on dragging state
+    const getCursorStyle = () => {
+        if (isDragging) return "grabbing";
+        return "grab";
+    };
 
     useEffect(() => {
         if (!image) return;
@@ -47,12 +121,20 @@ function ImageModal({image, objects, fileName, onClose, onDownload, onShowJson})
             const displayWidth = img.width * scaleRatio;
             const displayHeight = img.height * scaleRatio;
 
-            // 3. Устанавливаем canvas в соответствии с отображением
+            // 3. Устанавливаем canvas в соответствии с отображением (интринсик + CSS размеры одинаковые)
             canvas.width = displayWidth;
             canvas.height = displayHeight;
+            canvas.style.width = `${displayWidth}px`;
+            canvas.style.height = `${displayHeight}px`;
 
             const ctx = canvas.getContext("2d");
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Apply zoom and pan transformations
+            ctx.save();
+            ctx.translate(panOffset.x, panOffset.y);
+            ctx.scale(zoom, zoom);
+            
             ctx.drawImage(img, 0, 0, displayWidth, displayHeight);
 
             // 4. Отрисовываем bbox пропорционально масштабу
@@ -81,48 +163,135 @@ function ImageModal({image, objects, fileName, onClose, onDownload, onShowJson})
                     }
                 });
             }
+            
+            ctx.restore();
         };
-    }, [image, objects, showBbox]);
+    }, [image, objects, showBbox, zoom, panOffset]);
+
+    // Add wheel event listener with passive: false
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
+        const wheelHandler = (e) => {
+            e.preventDefault();
+            
+            // Get mouse position relative to canvas
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            
+            const delta = e.deltaY > 0 ? 0.9 : 1.1;
+            const newZoom = Math.max(0.5, Math.min(5, zoom * delta));
+            
+            if (newZoom !== zoom) {
+                // Calculate new pan offset to zoom towards mouse position
+                const zoomRatio = newZoom / zoom;
+                const newPanX = mouseX - (mouseX - panOffset.x) * zoomRatio;
+                const newPanY = mouseY - (mouseY - panOffset.y) * zoomRatio;
+                
+                setZoom(newZoom);
+                setPanOffset({x: newPanX, y: newPanY});
+                setHasChanges(true);
+            }
+        };
+
+        canvas.addEventListener('wheel', wheelHandler, { passive: false });
+
+        return () => {
+            canvas.removeEventListener('wheel', wheelHandler);
+        };
+    }, [zoom, panOffset]);
 
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
             <div className="relative bg-white rounded-lg shadow-lg p-4 max-w-3xl w-full flex flex-col items-center">
-                <button
-                    onClick={onClose}
-                    className="absolute top-2 right-2 text-gray-500 hover:text-red-600"
-                    title="Close"
-                >
-                    <CloseIcon className="w-6 h-6"/>
-                </button>
-                <div className="flex items-center gap-2 mb-2 w-full justify-end">
-                    <button onClick={onDownload} title="Download" className="p-2 hover:bg-blue-100 rounded-full">
-                        <DownloadIcon className="w-5 h-5 text-blue-600"/>
+                {/* Header: filename left, close button right */}
+                <div className="w-full flex items-center justify-between mb-2">
+                    <div className="text-xs text-gray-500 truncate" title={fileName}>{fileName}</div>
+                    <button
+                        onClick={onClose}
+                        className="text-gray-500 hover:text-red-600"
+                        title="Close"
+                        type="button"
+                    >
+                        <CloseIcon className="w-6 h-6"/>
                     </button>
-                    <button onClick={onShowJson} title="Show JSON" className="p-2 hover:bg-gray-100 rounded-full">
-                        <JsonIcon className="w-5 h-5 text-gray-600"/>
-                    </button>
-                    <label className="flex items-center gap-1 cursor-pointer select-none">
-                        <input
-                            type="checkbox"
-                            checked={showBbox}
-                            onChange={() => setShowBbox((v) => !v)}
-                            className="form-checkbox accent-blue-600"
-                        />
-                        {showBbox ? <EyeIcon className="w-5 h-5 text-blue-600"/> :
-                            <EyeOffIcon className="w-5 h-5 text-gray-400"/>}
-                        <span className="text-xs text-gray-700">Show bbox</span>
-                    </label>
                 </div>
+                
                 <div className="w-full flex justify-center items-center overflow-auto max-h-[70vh]">
                     <canvas
                         ref={canvasRef}
                         className="border rounded"
-                        style={{width: "100%", height: "auto"}}
+                        style={{ cursor: getCursorStyle() }}
+                        onMouseDown={handleMouseDown}
+                        onMouseMove={handleMouseMove}
+                        onMouseUp={handleMouseUp}
+                        onMouseLeave={handleMouseUp}
+                        title="Drag to pan, scroll to zoom"
                     />
                 </div>
-                <div className="mt-2 text-xs text-gray-500 truncate w-full text-center"
-                     title={fileName}>{fileName}</div>
+                
+                {/* Footer: actions left, zoom controls right */}
+                <div className="w-full flex items-center justify-between mt-2">
+                    {/* Left side: action buttons */}
+                    <div className="flex items-center gap-4">
+                        <button onClick={onDownload} title="Download" type="button" className="text-xs text-gray-600 hover:underline text-sm">
+                            Download
+                        </button>
+                        <button onClick={onShowJson} title="Show JSON" type="button" className="text-xs text-gray-700 hover:underline text-sm">
+                            Show JSON
+                        </button>
+                        <label className="flex items-center gap-1 cursor-pointer select-none">
+                            <input
+                                type="checkbox"
+                                checked={showBbox}
+                                onChange={() => setShowBbox((v) => !v)}
+                                className="hidden"
+                            />
+                            {showBbox ? <EyeIcon className="w-5 h-5 text-blue-600"/> :
+                                <EyeOffIcon className="w-5 h-5 text-gray-400"/>}
+                            <span className="text-xs text-gray-700">Show bbox</span>
+                        </label>
+                    </div>
+                    
+                    {/* Right side: zoom controls */}
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={handleZoomOut}
+                            className="px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm"
+                            title="Zoom Out"
+                            type="button"
+                        >
+                            -
+                        </button>
+                        <span className="text-sm text-gray-600 min-w-[3rem] text-center">
+                            {Math.round(zoom * 100)}%
+                        </span>
+                        <button
+                            onClick={handleZoomIn}
+                            className="px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm"
+                            title="Zoom In"
+                            type="button"
+                        >
+                            +
+                        </button>
+                        <button
+                            onClick={handleResetZoom}
+                            disabled={!hasChanges}
+                            className={`px-2 py-1 rounded text-sm ${
+                                !hasChanges 
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                                    : 'bg-blue-200 hover:bg-blue-300 text-blue-700'
+                            }`}
+                            title="Reset Zoom"
+                            type="button"
+                        >
+                            Reset
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     );
