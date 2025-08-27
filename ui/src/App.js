@@ -51,11 +51,9 @@ function App() {
             body: formData,
           });
           const data = await res.json();
+          // Use backend-provided bbox as-is ([x1, y1, x2, y2])
           const mappedObjects = Array.isArray(data.objects)
-            ? data.objects.map(obj => ({
-                ...obj,
-                bbox: obj.bbox_2d,
-              }))
+            ? data.objects.map(obj => ({ ...obj }))
             : [];
           setImages((prev) => {
             const arr = [...prev];
@@ -110,7 +108,11 @@ function App() {
       const ctx = canvas.getContext("2d");
       ctx.drawImage(imageEl, 0, 0);
       img.result.objects.forEach((obj) => {
-        const [x, y, w, h] = obj.bbox;
+        const [x1, y1, x2, y2] = obj.bbox;
+        const x = Math.min(x1, x2);
+        const y = Math.min(y1, y2);
+        const w = Math.abs(x2 - x1);
+        const h = Math.abs(y2 - y1);
         ctx.strokeStyle = "#ef4444";
         ctx.lineWidth = 2;
         ctx.strokeRect(x, y, w, h);

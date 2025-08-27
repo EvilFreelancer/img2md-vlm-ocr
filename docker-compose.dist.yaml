@@ -11,12 +11,12 @@ services:
     environment:
       OPENAI_API_KEY: sk-xxx
       OPENAI_BASE_URL: http://localhost:11434/v1
-      OPENAI_API_MODEL: qwen2.5vl:32b
+      OPENAI_API_MODEL: qwen2.5vl:7b
     ports:
       - "8000:8000"
     <<: *shared-logs
 
-  frontend:
+  ui:
     build:
       context: ./ui
       dockerfile: Dockerfile
