@@ -1,0 +1,14 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Page background -->
+  <rect x="2" y="2" width="28" height="28" rx="2" fill="white" stroke="#3B82F6" stroke-width="2"/>
+  
+  <!-- Page fold corner -->
+  <path d="M26 2 L26 8 L20 2 Z" fill="#E5E7EB"/>
+  
+  <!-- Text lines -->
+  <rect x="6" y="8" width="16" height="2" rx="1" fill="#6B7280"/>
+  <rect x="6" y="12" width="14" height="2" rx="1" fill="#6B7280"/>
+  <rect x="6" y="16" width="18" height="2" rx="1" fill="#6B7280"/>
+  <rect x="6" y="20" width="12" height="2" rx="1" fill="#6B7280"/>
+  <rect x="6" y="24" width="15" height="2" rx="1" fill="#6B7280"/>
+</svg>

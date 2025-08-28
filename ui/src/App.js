@@ -292,7 +292,7 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center p-4">
       <div className="flex items-center gap-4 mb-2">
-        <h1 className="text-2xl font-bold">VLM OCR to Markdown</h1>
+        <h1 className="text-2xl font-bold">img2md VLM OCR</h1>
         <div className="flex items-center gap-2">
           <a
             href="https://github.com/EvilFreelancer/vlm-ocr-to-markdown"

@@ -1,20 +1,14 @@
-<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Document background -->
-  <rect x="4" y="2" width="20" height="28" rx="2" fill="#3B82F6" stroke="#1E40AF" stroke-width="1"/>
+<svg width="192" height="192" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Page background -->
+  <rect x="12" y="12" width="168" height="168" rx="12" fill="white" stroke="#3B82F6" stroke-width="12"/>
   
-  <!-- Document lines representing text -->
-  <rect x="7" y="6" width="14" height="1.5" rx="0.75" fill="white"/>
-  <rect x="7" y="9" width="12" height="1.5" rx="0.75" fill="white"/>
-  <rect x="7" y="12" width="10" height="1.5" rx="0.75" fill="white"/>
-  <rect x="7" y="15" width="13" height="1.5" rx="0.75" fill="white"/>
+  <!-- Page fold corner -->
+  <path d="M156 12 L156 48 L120 12 Z" fill="#E5E7EB"/>
   
-  <!-- Arrow pointing to markdown -->
-  <path d="M26 16 L30 16 M30 16 L27 13 M30 16 L27 19" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-  
-  <!-- Markdown symbol -->
-  <text x="28" y="22" font-family="monospace" font-size="8" font-weight="bold" fill="#10B981">MD</text>
-  
-  <!-- VLM indicator (small AI brain symbol) -->
-  <circle cx="8" cy="24" r="2" fill="#8B5CF6"/>
-  <path d="M7 23 L9 25 M7 25 L9 23" stroke="white" stroke-width="0.5" stroke-linecap="round"/>
+  <!-- Text lines -->
+  <rect x="36" y="48" width="96" height="12" rx="6" fill="#6B7280"/>
+  <rect x="36" y="72" width="84" height="12" rx="6" fill="#6B7280"/>
+  <rect x="36" y="96" width="108" height="12" rx="6" fill="#6B7280"/>
+  <rect x="36" y="120" width="72" height="12" rx="6" fill="#6B7280"/>
+  <rect x="36" y="144" width="90" height="12" rx="6" fill="#6B7280"/>
 </svg>
