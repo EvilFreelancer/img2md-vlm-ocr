@@ -1,5 +1,5 @@
 import React, {useRef, useEffect, useState} from "react";
-import {DownloadIcon, JsonIcon, EyeIcon, EyeOffIcon, CloseIcon} from "./icons";
+import {EyeIcon, EyeOffIcon, CloseIcon} from "./icons";
 
 // Color palette for labels
 const LABEL_COLORS = [
@@ -22,7 +22,7 @@ function getLabelColor(label) {
 }
 
 // ImageModal component for viewing image with bbox overlay
-function ImageModal({image, objects, fileName, onClose, onDownload, onShowJson}) {
+function ImageModal({image, objects, fileName, onClose, onShowJson, onShowMarkdown, onDownloadZip}) {
     const canvasRef = useRef(null);
     const [showBbox, setShowBbox] = useState(true);
     const [zoom, setZoom] = useState(1);
@@ -237,12 +237,6 @@ function ImageModal({image, objects, fileName, onClose, onDownload, onShowJson})
                 <div className="w-full flex items-center justify-between mt-2">
                     {/* Left side: action buttons */}
                     <div className="flex items-center gap-4">
-                        <button onClick={onDownload} title="Download" type="button" className="text-xs text-gray-600 hover:underline text-sm">
-                            Download
-                        </button>
-                        <button onClick={onShowJson} title="Show JSON" type="button" className="text-xs text-gray-700 hover:underline text-sm">
-                            Show JSON
-                        </button>
                         <label className="flex items-center gap-1 cursor-pointer select-none">
                             <input
                                 type="checkbox"
@@ -254,6 +248,15 @@ function ImageModal({image, objects, fileName, onClose, onDownload, onShowJson})
                                 <EyeOffIcon className="w-5 h-5 text-gray-400"/>}
                             <span className="text-xs text-gray-700">Show bbox</span>
                         </label>
+                        <button onClick={onShowJson} title="Show JSON" type="button" className="text-xs text-gray-700 hover:underline text-sm">
+                            Show JSON
+                        </button>
+                        <button onClick={onShowMarkdown} title="Show Markdown" type="button" className="text-xs text-gray-700 hover:underline text-sm">
+                            Show Markdown
+                        </button>
+                        <button onClick={onDownloadZip} title="Download" type="button" className="text-xs text-green-700 hover:underline text-sm">
+                            Download
+                        </button>
                     </div>
                     
                     {/* Right side: zoom controls */}

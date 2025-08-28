@@ -1,5 +1,5 @@
 import React from "react";
-import { DownloadIcon, RefreshIcon, JsonIcon } from "./icons";
+import { DownloadIcon, RefreshIcon, JsonIcon, MarkdownIcon } from "./icons";
 import Loader from "./Loader";
 
 // ImageTile component for preview grid
@@ -11,6 +11,7 @@ function ImageTile({
   onDownload,
   onRepeat,
   onShowJson,
+  onShowMarkdown,
 }) {
   return (
     <div
@@ -55,6 +56,14 @@ function ImageTile({
               onClick={e => { e.stopPropagation(); onShowJson(); }}
             >
               <JsonIcon className="w-4 h-4 text-gray-600" />
+            </button>
+            <button
+              type="button"
+              title="Show Markdown"
+              className="bg-white rounded-full p-1 shadow hover:bg-gray-100"
+              onClick={e => { e.stopPropagation(); onShowMarkdown(); }}
+            >
+              <MarkdownIcon className="w-4 h-4 text-gray-600" />
             </button>
           </div>
         )}

@@ -18,6 +18,13 @@ export const JsonIcon = (props) => (
   </svg>
 );
 
+export const MarkdownIcon = (props) => (
+  <svg viewBox="0 0 20 20" fill="currentColor" {...props}>
+    <path d="M2 4a1 1 0 011-1h14a1 1 0 011 1v12a1 1 0 01-1 1H3a1 1 0 01-1-1V4z" />
+    <path d="M5 7h2v6H5V7zm4 0h2v6H9V7zm4 0h2v6h-2V7z" />
+  </svg>
+);
+
 export const EyeIcon = (props) => (
   <svg viewBox="0 0 20 20" fill="currentColor" {...props}>
     <path d="M10 3C5 3 1.73 7.11 1.05 10.29a1 1 0 000 .42C1.73 12.89 5 17 10 17s8.27-4.11 8.95-7.29a1 1 0 000-.42C18.27 7.11 15 3 10 3zm0 12c-3.87 0-7.16-3.13-7.93-6C2.84 7.13 6.13 4 10 4s7.16 3.13 7.93 6c-.77 2.87-4.06 6-7.93 6zm0-10a4 4 0 100 8 4 4 0 000-8zm0 6a2 2 0 110-4 2 2 0 010 4z" />

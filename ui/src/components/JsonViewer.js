@@ -1,27 +1,35 @@
 import React from "react";
+import { CloseIcon } from "./icons";
 
 // JsonViewer component for displaying JSON response
 function JsonViewer({ data, onClose }) {
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded shadow-lg max-w-3xl w-full max-h-[80vh] relative flex flex-col">
-        <div className="sticky top-0 flex items-center justify-between px-4 py-3 border-b bg-white rounded-t">
-          <h3 className="font-bold">JSON Response</h3>
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+      <div className="relative bg-white rounded-lg shadow-lg p-4 max-w-4xl w-full max-h-[90vh] flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold">JSON View</h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
-            aria-label="Close JSON"
+            className="text-gray-500 hover:text-red-600"
             title="Close"
             type="button"
           >
-            &times;
+            <CloseIcon className="w-6 h-6" />
           </button>
         </div>
-        <div className="p-4 overflow-auto">
-          <pre className="overflow-x-auto text-xs bg-gray-100 p-2 rounded">
-            {JSON.stringify(data, null, 2)}
-          </pre>
+        
+        {/* Content */}
+        <div className="flex-1 overflow-auto">
+          <div className="bg-gray-50 p-4 rounded border font-mono text-sm">
+            <pre className="whitespace-pre-wrap overflow-x-auto">
+              {JSON.stringify(data, null, 2)}
+            </pre>
+          </div>
         </div>
+        
+
       </div>
     </div>
   );
