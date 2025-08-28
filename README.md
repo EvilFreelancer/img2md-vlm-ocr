@@ -1,8 +1,8 @@
-# Markdown OCR VLM API
+# VLM OCR to Markdown
 
 ## Overview
 
-Markdown OCR VLM API is a comprehensive service for extracting document structure and content from images using advanced computer vision and vision-language models (VLM). The system combines YOLO-based document layout segmentation with OpenAI-compatible VLM models to accurately detect, classify, and extract text content from document images, converting them to structured Markdown format.
+VLM OCR to Markdown is a comprehensive service for extracting document structure and content from images using advanced computer vision and vision-language models (VLM). The system combines YOLO-based document layout segmentation with OpenAI-compatible VLM models to accurately detect, classify, and extract text content from document images, converting them to structured Markdown format.
 
 ## Key Features
 
