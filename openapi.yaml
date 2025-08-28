@@ -1,11 +1,11 @@
 openapi: 3.1.0
 info:
-  title: Markdown OCR VLM API
+  title: img2md VLM OCR API
   version: 1.0.0
 servers:
-  - url: http://localhost:8000/api
+  - url: https://img2md.rpa.icu
 paths:
-  /objects:
+  /api/objects:
     post:
       summary: Predict Objects
       operationId: predict_objects_api_objects_post
