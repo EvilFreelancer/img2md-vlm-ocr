@@ -82,6 +82,19 @@ function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [images.length]);
 
+  // Repeat (re-send) image processing
+  const handleRepeat = (idx) => {
+    setImages((prev) => {
+      const arr = [...prev];
+      if (arr[idx]) {
+        arr[idx].status = "pending";
+        arr[idx].result = null;
+      }
+      return arr;
+    });
+    queueRef.current.push(idx);
+  };
+
   // Generate markdown content (shared function)
   const generateMarkdown = (data) => {
     if (!data || !Array.isArray(data.objects)) {
@@ -112,7 +125,31 @@ function App() {
         // Add markdown image link
         mdLines.push(`![Picture ${pictureCount}](picture_${pictureCount}.png)`);
       } else if (text && text.trim()) {
-        mdLines.push(text.trim());
+        let processedText = text.trim();
+        
+        // Handle list-item elements - add dash if not present
+        if (objType.toLowerCase() === "list-item") {
+          const trimmedText = processedText.trim();
+          if (!trimmedText.startsWith('-') && !trimmedText.startsWith('*')) {
+            processedText = `- ${trimmedText}`;
+          }
+        }
+        // Handle page-header elements - add # if not present
+        else if (objType.toLowerCase() === "page-header") {
+          const trimmedText = processedText.trim();
+          if (!trimmedText.startsWith('#')) {
+            processedText = `# ${trimmedText}`;
+          }
+        }
+        // Handle section-header elements - add ## if not present
+        else if (objType.toLowerCase() === "section-header") {
+          const trimmedText = processedText.trim();
+          if (!trimmedText.startsWith('#')) {
+            processedText = `## ${trimmedText}`;
+          }
+        }
+        
+        mdLines.push(processedText);
       }
     });
 
@@ -240,7 +277,7 @@ function App() {
       <h1 className="text-2xl font-bold mb-4">Markdown OCR UI</h1>
       <ImageUploader onUpload={handleUpload} />
       {images.length > 0 && (
-        <div className="flex flex-wrap gap-4 mb-4 w-full max-w-xl">
+        <div className="flex flex-wrap gap-1 mb-4 w-full max-w-xl">
           {images.map((img, idx) => (
             <ImageTile
               key={idx}
@@ -248,6 +285,7 @@ function App() {
               isSelected={false} // Removed selectedIndex
               isLoading={img.status === "loading" || img.status === "pending"}
               onClick={() => handleOpenModal(idx)}
+              onReload={() => handleRepeat(idx)}
             />
           ))}
         </div>

@@ -40,7 +40,7 @@ function ImageUploader({ onUpload }) {
         onChange={handleFileChange}
         className="hidden"
       />
-      <div className="text-blue-600 font-semibold mb-2">Drag & Drop images here or click to select</div>
+      <div className="text-blue-600 font-semibold mb-2">Drag & Drop one or few images here or click to select</div>
       <div className="text-gray-400 text-sm">Supported: PNG, JPG, JPEG, GIF, etc.</div>
     </div>
   );

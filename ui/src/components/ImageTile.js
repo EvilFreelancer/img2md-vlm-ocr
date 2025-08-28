@@ -1,5 +1,4 @@
 import React from "react";
-import { DownloadIcon, RefreshIcon, JsonIcon, MarkdownIcon } from "./icons";
 import Loader from "./Loader";
 
 // ImageTile component for preview grid
@@ -8,20 +7,52 @@ function ImageTile({
   isSelected,
   isLoading,
   onClick,
-  onDownload,
-  onRepeat,
-  onShowJson,
-  onShowMarkdown,
+  onReload,
 }) {
+  const isError = img.status === "error";
+  
+  const handleReloadClick = (e) => {
+    e.stopPropagation(); // Prevent modal opening
+    if (onReload) {
+      onReload();
+    }
+  };
+  
   return (
     <div
-      className={`relative flex flex-col items-center p-2 rounded-lg border-2 cursor-pointer transition w-28 h-32 select-none ${isSelected ? "border-blue-500 bg-blue-50" : "border-gray-200 bg-white"}`}
-      onClick={onClick}
-      tabIndex={0}
+      className={`relative flex flex-col items-center p-2 rounded-lg border-2 transition-all duration-200 w-28 h-32 select-none ${
+        isLoading 
+          ? "border-gray-300 bg-gray-100 cursor-wait" 
+          : isError
+          ? "border-red-300 bg-red-50 cursor-default"
+          : "border-gray-200 bg-white cursor-pointer hover:shadow-lg"
+      } ${isSelected ? "border-blue-500 bg-blue-50" : ""}`}
+      onClick={isLoading || isError ? undefined : onClick}
+      tabIndex={isLoading || isError ? -1 : 0}
     >
       <div className="relative w-20 h-20 flex items-center justify-center mb-1">
         {isLoading ? (
           <Loader />
+        ) : isError ? (
+          <div 
+            className="w-20 h-20 flex items-center justify-center bg-red-100 rounded cursor-pointer hover:bg-red-200 transition-colors"
+            onClick={handleReloadClick}
+            title="Click to retry"
+          >
+            <svg 
+              className="w-6 h-6 text-red-500" 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                strokeWidth={2} 
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
+              />
+            </svg>
+          </div>
         ) : (
           <img
             src={img.url}
@@ -30,46 +61,9 @@ function ImageTile({
             draggable={false}
           />
         )}
-        {/* Action icons overlay */}
-        {!isLoading && img.result && (
-          <div className="absolute top-1 right-1 flex flex-col gap-1 z-10">
-            <button
-              type="button"
-              title="Download"
-              className="bg-white rounded-full p-1 shadow hover:bg-blue-100"
-              onClick={e => { e.stopPropagation(); onDownload(); }}
-            >
-              <DownloadIcon className="w-4 h-4 text-blue-600" />
-            </button>
-            <button
-              type="button"
-              title="Repeat"
-              className="bg-white rounded-full p-1 shadow hover:bg-yellow-100"
-              onClick={e => { e.stopPropagation(); onRepeat(); }}
-            >
-              <RefreshIcon className="w-4 h-4 text-yellow-600" />
-            </button>
-            <button
-              type="button"
-              title="Show JSON"
-              className="bg-white rounded-full p-1 shadow hover:bg-gray-100"
-              onClick={e => { e.stopPropagation(); onShowJson(); }}
-            >
-              <JsonIcon className="w-4 h-4 text-gray-600" />
-            </button>
-            <button
-              type="button"
-              title="Show Markdown"
-              className="bg-white rounded-full p-1 shadow hover:bg-gray-100"
-              onClick={e => { e.stopPropagation(); onShowMarkdown(); }}
-            >
-              <MarkdownIcon className="w-4 h-4 text-gray-600" />
-            </button>
-          </div>
-        )}
       </div>
       <span className="text-xs text-gray-600 truncate w-full text-center" title={img.file.name}>
-        {img.file.name.length > 18 ? img.file.name.slice(0, 8) + "..." + img.file.name.slice(-7) : img.file.name}
+        {img.file.name.length > 16 ? img.file.name.slice(0, 7) + "..." + img.file.name.slice(-6) : img.file.name}
       </span>
     </div>
   );

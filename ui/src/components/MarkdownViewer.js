@@ -185,10 +185,20 @@ function MarkdownViewer({ data, onClose, generateMarkdown }) {
                 .prose ul {
                   margin: 1rem 0;
                   padding-left: 1.5rem;
+                  list-style: none;
                 }
                 .prose li {
                   margin: 0.5rem 0;
                   color: #374151;
+                  position: relative;
+                  padding-left: 1rem;
+                }
+                .prose li::before {
+                  content: "-";
+                  position: absolute;
+                  left: -1rem;
+                  color: #6b7280;
+                  font-weight: bold;
                 }
                 .prose p {
                   margin: 1rem 0;
