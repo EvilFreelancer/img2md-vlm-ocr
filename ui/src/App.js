@@ -25,9 +25,15 @@ function App() {
         result: null,
         status: "pending",
       }));
-      // Push new indices to queue
-      queueRef.current.push(...newImgs.map((_, i) => prev.length + i));
-      return [...prev, ...newImgs];
+      
+      // Add new images to state
+      const updatedImages = [...prev, ...newImgs];
+      
+      // Add new indices to queue for processing
+      const newIndices = newImgs.map((_, i) => prev.length + i);
+      queueRef.current.push(...newIndices);
+      
+      return updatedImages;
     });
   };
 
@@ -36,13 +42,21 @@ function App() {
     async function processQueue() {
       if (isProcessingRef.current) return;
       isProcessingRef.current = true;
+      
       while (queueRef.current.length > 0) {
         const idx = queueRef.current.shift();
+        
+        // Check if image still exists and is not already processed
+        if (!images[idx] || images[idx].status === "done" || images[idx].status === "loading") {
+          continue;
+        }
+        
         setImages((prev) => {
           const arr = [...prev];
           if (arr[idx]) arr[idx].status = "loading";
           return arr;
         });
+        
         try {
           const formData = new FormData();
           formData.append("file", images[idx].file);
@@ -51,10 +65,12 @@ function App() {
             body: formData,
           });
           const data = await res.json();
+          
           // Use backend-provided bbox as-is ([x1, y1, x2, y2])
           const mappedObjects = Array.isArray(data.objects)
             ? data.objects.map(obj => ({ ...obj }))
             : [];
+          
           setImages((prev) => {
             const arr = [...prev];
             if (arr[idx]) {
@@ -76,11 +92,12 @@ function App() {
       }
       isProcessingRef.current = false;
     }
-    if (queueRef.current.length > 0) {
+    
+    // Only process queue if there are pending items and not currently processing
+    if (queueRef.current.length > 0 && !isProcessingRef.current) {
       processQueue();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [images.length]);
+  }, [images, queueRef.current.length]);
 
   // Repeat (re-send) image processing
   const handleRepeat = (idx) => {
