@@ -320,7 +320,7 @@ docker compose up --build
 
 ## License
 
-[Add your license information here]
+This project is distributed under the MIT license. See the [LICENSE](./LICENSE) file for details.
 
 ## Support
 
